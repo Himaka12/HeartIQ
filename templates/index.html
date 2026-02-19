@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Disease Prediction</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Syne:wght@600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --green:        #2dff8e;
+            --green-soft:   #1de87a;
+            --green-muted:  rgba(45, 255, 142, 0.18);
+            --green-glow:   rgba(45, 255, 142, 0.12);
+            --green-line:   rgba(45, 255, 142, 0.22);
+            --bg-base:      #050c07;
+            --bg-card:      #080f09;
+            --bg-section:   #0a130b;
+            --bg-input:     #0c150d;
+            --bg-input-focus: #0e180f;
+            --text-primary: #c8f0d4;
+            --text-secondary:#6b9474;
+            --text-muted:   #3d5e45;
+            --text-hint:    #2e4734;
+            --danger:       #ff4d6d;
+            --danger-soft:  rgba(255, 77, 109, 0.15);
+            --danger-line:  rgba(255, 77, 109, 0.35);
+            --border:       rgba(45, 255, 142, 0.12);
+            --border-hover: rgba(45, 255, 142, 0.35);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background: var(--bg-base);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle radial bg glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 900px;
+            height: 500px;
+            background: radial-gradient(ellipse, rgba(45,255,142,0.04) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Very fine dot grid */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(45,255,142,0.08) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            padding: 52px 16px 72px;
+        }
+
+        /* ── HEADER ── */
+        .site-header {
+            text-align: center;
+            margin-bottom: 56px;
+            animation: riseIn 0.7s cubic-bezier(.22,1,.36,1) both;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--green-glow);
+            border: 1px solid var(--green-line);
+            border-radius: 100px;
+            padding: 5px 16px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .badge-pip {
+            width: 6px; height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--green);
+            animation: breathe 2.4s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .site-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(34px, 6vw, 60px);
+            line-height: 1.05;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .site-header h1 em {
+            font-style: normal;
+            color: var(--green);
+            text-shadow: 0 0 40px rgba(45,255,142,0.35);
+        }
+
+        .site-header p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            font-weight: 300;
+            max-width: 420px;
+            margin: 0 auto;
+            line-height: 1.65;
+        }
+
+        /* ECG decoration */
+        .ecg-wrap {
+            height: 36px;
+            overflow: hidden;
+            margin: 18px auto 0;
+            max-width: 340px;
+            opacity: 0.5;
+        }
+
+        .ecg-wrap svg {
+            width: 200%;
+            height: 100%;
+            animation: slideEcg 2.8s linear infinite;
+        }
+
+        @keyframes slideEcg {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        /* ── MAIN CARD ── */
+        .main-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            animation: riseIn 0.85s cubic-bezier(.22,1,.36,1) 0.1s both;
+        }
+
+        /* top glow line */
+        .main-card::before {
+            content: '';
+            display: block;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 5%, var(--green-soft) 40%, var(--green-soft) 60%, transparent 95%);
+            opacity: 0.55;
+        }
+
+        /* ── SECTION BLOCKS ── */
+        .form-section {
+            padding: 32px 36px 28px;
+            position: relative;
+        }
+
+        .form-section + .form-section {
+            border-top: 1px solid rgba(45,255,142,0.07);
+        }
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 26px;
+        }
+
+        .section-icon {
+            width: 38px; height: 38px;
+            background: var(--green-glow);
+            border: 1px solid var(--green-line);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .section-meta h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 2px;
+            letter-spacing: 0.3px;
+        }
+
+        .section-meta p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+            font-weight: 300;
+        }
+
+        /* ── FORM FIELDS ── */
+        .field-wrap {
+            margin-bottom: 4px;
+        }
+
+        .field-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.2px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 7px;
+        }
+
+        /* sample value hint */
+        .field-hint {
+            display: block;
+            font-size: 11px;
+            color: var(--text-hint);
+            font-weight: 300;
+            margin-top: 5px;
+            font-family: 'DM Mono', monospace;
+            padding-left: 2px;
+        }
+
+        .form-control,
+        .form-select {
+            background: var(--bg-input) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 10px !important;
+            color: var(--text-primary) !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-size: 14px !important;
+            font-weight: 400 !important;
+            padding: 11px 15px !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+            width: 100%;
+        }
+
+        .form-control::placeholder {
+            color: var(--text-hint) !important;
+            font-size: 13px !important;
+            font-style: italic;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--border-hover) !important;
+            box-shadow: 0 0 0 3px rgba(45,255,142,0.07) !important;
+            background: var(--bg-input-focus) !important;
+            outline: none !important;
+        }
+
+        .form-select option {
+            background: #0c150d;
+            color: var(--text-primary);
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+        input[type=number] { -moz-appearance: textfield; }
+
+        /* ── DIVIDER ── */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(45,255,142,0.1), transparent);
+            margin: 0;
+        }
+
+        /* ── SUBMIT SECTION ── */
+        .submit-section {
+            padding: 28px 36px 36px;
+            background: linear-gradient(to bottom, var(--bg-card), rgba(10,20,11,1));
+        }
+
+        .btn-predict {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 28px;
+            background: var(--green);
+            color: #04100a;
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-predict::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+        }
+
+        .btn-predict:hover {
+            background: #47ffA0;
+            box-shadow: 0 0 40px rgba(45,255,142,0.35), 0 8px 24px rgba(0,0,0,0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-predict:active {
+            transform: translateY(0);
+        }
+
+        .btn-icon {
+            font-size: 18px;
+        }
+
+        .btn-note {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 12px;
+            font-weight: 300;
+        }
+
+        /* ── RESULT BOX ── */
+        .result-wrap {
+            padding: 0 36px 36px;
+        }
+
+        .result-box {
+            border-radius: 14px;
+            overflow: hidden;
+            animation: riseIn 0.5s ease both;
+        }
+
+        .result-top-bar {
+            padding: 4px 0;
+        }
+
+        .result-inner {
+            padding: 26px 28px;
+        }
+
+        .result-flag {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            opacity: 0.7;
+        }
+
+        .result-headline {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(17px, 3vw, 22px);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .probability-text {
+            font-size: 13px;
+            font-weight: 300;
+            opacity: 0.75;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .result-pills {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .rpill {
+            font-size: 11px;
+            font-family: 'DM Mono', monospace;
+            letter-spacing: 0.8px;
+            padding: 4px 12px;
+            border-radius: 100px;
+        }
+
+        /* High risk */
+        .high-risk { border: 1px solid var(--danger-line); background: var(--danger-soft); }
+        .high-risk .result-top-bar { background: linear-gradient(90deg, var(--danger) 0%, transparent 100%); height: 3px; }
+        .high-risk .result-flag { color: var(--danger); }
+        .high-risk .result-headline { color: var(--danger); }
+        .high-risk .probability-text { color: rgba(255,77,109,0.8); }
+        .high-risk .rpill { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.25); color: rgba(255,77,109,0.8); }
+
+        /* Low risk */
+        .low-risk { border: 1px solid rgba(45,255,142,0.25); background: rgba(45,255,142,0.04); }
+        .low-risk .result-top-bar { background: linear-gradient(90deg, var(--green) 0%, transparent 100%); height: 3px; }
+        .low-risk .result-flag { color: var(--green); }
+        .low-risk .result-headline { color: var(--green); }
+        .low-risk .probability-text { color: var(--text-secondary); }
+        .low-risk .rpill { background: rgba(45,255,142,0.07); border: 1px solid rgba(45,255,142,0.2); color: var(--text-secondary); }
+
+        /* ── FOOTER ── */
+        .page-footer {
+            text-align: center;
+            margin-top: 32px;
+            font-size: 11.5px;
+            color: var(--text-muted);
+            font-weight: 300;
+            animation: riseIn 1s ease 0.2s both;
+        }
+
+        /* ── KEYFRAMES ── */
+        @keyframes riseIn {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 575px) {
+            .form-section { padding: 24px 20px 20px; }
+            .submit-section { padding: 20px 20px 28px; }
+            .result-wrap { padding: 0 20px 28px; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="page-wrap">
+<div class="container">
+
+    <!-- ── HEADER ── -->
+    <div class="site-header">
+        <div class="badge-pill">
+            <span class="badge-pip"></span>
+            AI Cardiac Assessment
+        </div>
+        <h1>Heart Disease<br><em>Risk Prediction</em></h1>
+        <p>Enter your health data below. Our model analyses key biomarkers and lifestyle indicators to assess cardiac risk.</p>
+        <div class="ecg-wrap">
+            <svg viewBox="0 0 800 36" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                <polyline
+                    points="0,18 50,18 70,18 82,4 94,32 106,4 118,18 160,18 210,18 230,18 242,4 254,32 266,4 278,18 320,18 370,18 390,18 402,4 414,32 426,4 438,18 480,18 530,18 550,18 562,4 574,32 586,4 598,18 640,18 690,18 710,18 722,4 734,32 746,4 758,18 800,18"
+                    fill="none" stroke="#2dff8e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                />
+            </svg>
+        </div>
+    </div>
+
+    <!-- ── MAIN CARD ── -->
+    <div class="row justify-content-center">
+    <div class="col-xl-8 col-lg-9 col-md-11">
+
+        <div class="main-card">
+
+            <form action="/predict" method="POST">
+
+            <!-- ─────────────────────────────────────────────────────────
+                 SECTION 1 — Physical Profile
+                 Fields: Age, Gender, BMI, Blood_Pressure
+            ───────────────────────────────────────────────────────── -->
+            <div class="form-section">
+                <div class="section-head">
+                    <div class="section-icon">🧍</div>
+                    <div class="section-meta">
+                        <h3>Physical Profile</h3>
+                        <p>Basic biometric and body composition data</p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    {% for feature in features if feature in ['Age', 'Gender', 'BMI', 'Blood_Pressure'] %}
+                    <div class="col-md-6 field-wrap">
+                        <label class="field-label" for="{{ feature }}">{{ feature.replace('_', ' ') }}</label>
+
+                        {% if feature in cat_options %}
+                            <select class="form-select" name="{{ feature }}" id="{{ feature }}" required>
+                                <option value="" disabled selected>Select {{ feature.replace('_', ' ') }}</option>
+                                {% for option in cat_options[feature] %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="number" step="any" class="form-control"
+                                name="{{ feature }}" id="{{ feature }}"
+                                {% if feature == 'Age' %} placeholder="e.g. 45"
+                                {% elif feature == 'BMI' %} placeholder="e.g. 24.5"
+                                {% elif feature == 'Blood_Pressure' %} placeholder="e.g. 120"
+                                {% else %} placeholder="Enter value"
+                                {% endif %}
+                                required>
+                            <span class="field-hint">
+                                {% if feature == 'Age' %}Typical range: 20 – 90 years
+                                {% elif feature == 'BMI' %}Normal: 18.5–24.9 &nbsp;|&nbsp; Overweight: 25–29.9
+                                {% elif feature == 'Blood_Pressure' %}Normal systolic: &lt; 120 mmHg
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- ─────────────────────────────────────────────────────────
+                 SECTION 2 — Blood & Lab Results
+                 Fields: Cholesterol_Level, Fasting_Blood_Sugar,
+                         Homocysteine_Level, CRP_Level, Inflammation_Index
+            ───────────────────────────────────────────────────────── -->
+            <div class="form-section">
+                <div class="section-head">
+                    <div class="section-icon">🧪</div>
+                    <div class="section-meta">
+                        <h3>Blood &amp; Lab Results</h3>
+                        <p>Biochemical markers from your clinical blood test</p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    {% for feature in features if feature in ['Cholesterol_Level', 'Fasting_Blood_Sugar', 'Homocysteine_Level', 'CRP_Level', 'Inflammation_Index'] %}
+                    <div class="col-md-6 field-wrap">
+                        <label class="field-label" for="{{ feature }}">{{ feature.replace('_', ' ') }}</label>
+
+                        {% if feature in cat_options %}
+                            <select class="form-select" name="{{ feature }}" id="{{ feature }}" required>
+                                <option value="" disabled selected>Select {{ feature.replace('_', ' ') }}</option>
+                                {% for option in cat_options[feature] %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="number" step="any" class="form-control"
+                                name="{{ feature }}" id="{{ feature }}"
+                                {% if feature == 'Cholesterol_Level' %} placeholder="e.g. 180"
+                                {% elif feature == 'Fasting_Blood_Sugar' %} placeholder="e.g. 95"
+                                {% elif feature == 'Homocysteine_Level' %} placeholder="e.g. 10.0"
+                                {% elif feature == 'CRP_Level' %} placeholder="e.g. 2.0"
+                                {% elif feature == 'Inflammation_Index' %} placeholder="e.g. 1.5"
+                                {% else %} placeholder="Enter value"
+                                {% endif %}
+                                required>
+                            <span class="field-hint">
+                                {% if feature == 'Cholesterol_Level' %}Desirable: &lt; 200 mg/dL
+                                {% elif feature == 'Fasting_Blood_Sugar' %}Normal: 70–99 mg/dL
+                                {% elif feature == 'Homocysteine_Level' %}Normal: 5–15 µmol/L
+                                {% elif feature == 'CRP_Level' %}Low risk: &lt; 1.0 &nbsp;|&nbsp; High risk: &gt; 3.0 mg/L
+                                {% elif feature == 'Inflammation_Index' %}Elevated if &gt; 2.0
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- ─────────────────────────────────────────────────────────
+                 SECTION 3 — Lifestyle & Habits
+                 Fields: Sleep_Hours, Smoking, Alcohol_Consumption,
+                         Physical_Activity, Exercise_Hours_Per_Week,
+                         Diet, Stress_Level
+            ───────────────────────────────────────────────────────── -->
+            <div class="form-section">
+                <div class="section-head">
+                    <div class="section-icon">🌿</div>
+                    <div class="section-meta">
+                        <h3>Lifestyle &amp; Habits</h3>
+                        <p>Daily behaviours that significantly influence cardiac health</p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    {% for feature in features if feature in ['Sleep_Hours', 'Smoking', 'Alcohol_Consumption', 'Physical_Activity', 'Exercise_Hours_Per_Week', 'Diet', 'Stress_Level'] %}
+                    <div class="col-md-6 field-wrap">
+                        <label class="field-label" for="{{ feature }}">{{ feature.replace('_', ' ') }}</label>
+
+                        {% if feature in cat_options %}
+                            <select class="form-select" name="{{ feature }}" id="{{ feature }}" required>
+                                <option value="" disabled selected>Select {{ feature.replace('_', ' ') }}</option>
+                                {% for option in cat_options[feature] %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="number" step="any" class="form-control"
+                                name="{{ feature }}" id="{{ feature }}"
+                                {% if feature == 'Sleep_Hours' %} placeholder="e.g. 7"
+                                {% elif feature == 'Exercise_Hours_Per_Week' %} placeholder="e.g. 3"
+                                {% elif feature == 'Stress_Level' %} placeholder="e.g. 4"
+                                {% else %} placeholder="Enter value"
+                                {% endif %}
+                                required>
+                            <span class="field-hint">
+                                {% if feature == 'Sleep_Hours' %}Recommended: 7–9 hours/night
+                                {% elif feature == 'Exercise_Hours_Per_Week' %}WHO recommends ≥ 2.5 hrs/week
+                                {% elif feature == 'Stress_Level' %}Scale: 1 (very low) → 10 (extremely high)
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- ─────────────────────────────────────────────────────────
+                 SECTION 4 — Medical History
+                 All remaining features not covered above
+            ───────────────────────────────────────────────────────── -->
+            <div class="form-section">
+                <div class="section-head">
+                    <div class="section-icon">📋</div>
+                    <div class="section-meta">
+                        <h3>Medical History</h3>
+                        <p>Prior diagnoses, conditions &amp; family background</p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    {% for feature in features if feature not in [
+                        'Age', 'Gender', 'BMI', 'Blood_Pressure',
+                        'Cholesterol_Level', 'Fasting_Blood_Sugar', 'Homocysteine_Level', 'CRP_Level', 'Inflammation_Index',
+                        'Sleep_Hours', 'Smoking', 'Alcohol_Consumption', 'Physical_Activity', 'Exercise_Hours_Per_Week', 'Diet', 'Stress_Level'
+                    ] %}
+                    <div class="col-md-6 field-wrap">
+                        <label class="field-label" for="{{ feature }}">{{ feature.replace('_', ' ') }}</label>
+
+                        {% if feature in cat_options %}
+                            <select class="form-select" name="{{ feature }}" id="{{ feature }}" required>
+                                <option value="" disabled selected>Select {{ feature.replace('_', ' ') }}</option>
+                                {% for option in cat_options[feature] %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="number" step="any" class="form-control"
+                                name="{{ feature }}" id="{{ feature }}"
+                                placeholder="Enter a valid number"
+                                required>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ── SUBMIT ── -->
+            <div class="submit-section">
+                <button type="submit" class="btn-predict">
+                    <span class="btn-icon">♥</span>
+                    Analyse Heart Risk
+                </button>
+                <p class="btn-note">Results are generated by an AI model — not a substitute for medical diagnosis.</p>
+            </div>
+
+            </form>
+
+            <!-- ── RESULT OUTPUT — logic untouched ── -->
+            {% if prediction_text %}
+            <div class="result-wrap">
+
+                {% if "High" in prediction_text or "high" in prediction_text %}
+                <div class="result-box high-risk">
+                    <div class="result-top-bar"></div>
+                    <div class="result-inner">
+                        <div class="result-flag">⚠ Risk Assessment Complete</div>
+                        <div class="result-headline">{{ prediction_text }}</div>
+                        <div class="probability-text">{{ probability_text }}</div>
+                        <div class="result-pills">
+                            <span class="rpill">High Risk Detected</span>
+                            <span class="rpill">Consult a Physician</span>
+                            <span class="rpill">AI Assessed</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% else %}
+                <div class="result-box low-risk">
+                    <div class="result-top-bar"></div>
+                    <div class="result-inner">
+                        <div class="result-flag">✓ Assessment Complete</div>
+                        <div class="result-headline">{{ prediction_text }}</div>
+                        <div class="probability-text">{{ probability_text }}</div>
+                        <div class="result-pills">
+                            <span class="rpill">Low Risk</span>
+                            <span class="rpill">Within Normal Range</span>
+                            <span class="rpill">AI Assessed</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+            {% endif %}
+
+        </div><!-- /main-card -->
+
+        <p class="page-footer">Not a substitute for professional medical advice &nbsp;·&nbsp; Always consult a licensed physician</p>
+
+    </div>
+    </div>
+
+</div>
+</div>
+</body>
+</html>
